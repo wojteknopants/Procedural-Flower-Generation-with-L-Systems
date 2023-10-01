@@ -1,0 +1,269 @@
+from openalea.lpy import *
+import random as rd
+
+globalwidth = 5
+dl = 0.01
+length = 2
+radinc = 0.005
+
+def pscale(t):
+  return 0.98**t
+  
+def pscalew(t):
+  return 0.98**(2*t)
+  
+
+
+module P, MyGC, L0, L1
+#Axiom: _(0.05)FA(0)
+Axiom: SetWidth(0.1)I(0.5,0.01)A(0)
+
+derivation length: 10
+production:
+A(t):
+  if t<10:
+    e=200
+  else:
+    e=-100
+    
+  produce @Di(1)V(10)I(0.5,0.01)[^C(t)]/(rd.randrange(120))[^B(t)]/(120)[^B(t)]A(t+1)
+  
+  
+B(t):
+  for i in range(3):
+    nproduce ^(rd.randrange(0,10))@Di(0.9)F(0.07, 0.009)
+  produce L0(t, 0)
+  
+C(t):
+  for i in range(5):
+    nproduce &(rd.randrange(0,25)) V(5) @Di(0.9) F(0.2)
+  #nproduce ;(4)@O(0.07)
+  produce P(t, 0)
+  
+L0(t, n): 
+  	#produce /(180)&(rd.randrange(30,40))@D(1)Sweep(path,section,length,dl,globalwidth,leafwidth)
+  if n < 7 :  produce [L0(t, n+1)]
+  else:   produce %
+  
+
+P(t,n):
+  if n <6:
+    produce [P(t, n+1)]
+  else:
+    produce %
+    
+    
+V(n):
+  produce /(rd.randrange(-n,n))-(rd.randrange(-n,n))^(rd.randrange(-n,n))
+  
+  
+I(s,r)--> I(s,r+radinc)    
+    
+MyGC(axis,section,width,length,widthfactor,discretization):
+   # print ('myGC')
+   nproduce  [ SetGuide(axis,length) SetContour(section) _(width(0)) StartGC()
+   step = 1/float(discretization)
+   for j in range(discretization):
+       nproduce F(step*length,widthfactor*width((j+1)*step))
+   nproduce ]
+
+interpretation:
+#L0(t) --> [/(180)&(rd.randrange(30,40))@D(1)Sweep(path,section,length,dl,globalwidth,leafwidth)]
+
+
+homomorphism:
+L0(t, n):
+  if n>=0 and n<=1:
+    pst = pscale(t)/3
+    pswt = pscalew(t)/3
+    ang = -10
+    texture = 16
+  elif n==2:
+    pst = pscale(t)/1.5
+    pswt = pscalew(t)/1.5
+    ang = 0
+    texture = 16
+  elif n>=3 and n<=6:
+    pst = pscale(t)
+    pswt = pscalew(t)
+    ang = 0
+    texture = 16
+  elif n==7:
+    pst = pscale(t)
+    pswt = pscalew(t)
+    ang = -10
+    texture = 16
+  else:
+    pst = pscale(t)
+    pswt = pscalew(t)
+    ang = -20
+    texture = 16
+  produce [/(180)^(ang)&(rd.randrange(30,40))Sweep(path,section,length*pst,dl,globalwidth*pswt,leafwidth)]
+  
+  
+P(t, n):
+  if n==0:
+    pst = 0.6
+    pswt = 0.1
+    ang = 25
+    texture = 16
+    axis = budaxis
+    section = petalsection
+  elif n==1:
+    pst = 0.8
+    pswt = 0.2
+    ang = 50
+    texture = 16
+    axis = budsection
+    section = petalsection
+  elif n==2:
+    pst = pscale(t)/1.5
+    pswt = pscalew(t)/1.5
+    ang = 80
+    texture = 16
+    axis = petalaxis
+    section = petalsection
+  elif n==3 or n==4:
+    pst = pscale(t)
+    pswt = pscalew(t)
+    ang = 80
+    texture = 16
+    axis = petalaxis
+    section = petalsection
+  elif n==5:
+    pst = pscale(t)/1.5
+    pswt = pscalew(t)/1.5
+    ang = 95
+    texture = 16
+    axis = petalaxis
+    section = petalsection
+  else:
+    pst = pscale(t)/2
+    pswt = pscalew(t)/2
+    ang = 120
+    texture = 16
+    axis = petalaxis
+    section = petalsection
+    
+    
+  nproduce ;(4)@Di(pswt)@O(0.04)
+  for i in range(5):
+     nproduce /(72)[ ;(texture)^(ang)+(-0) SetGuide(axis,pscale(t)*1.25) SetContour(section) _(petalwidth(0)) StartGC()
+     step = 1/float(100)
+     for j in range(100):
+       nproduce F(step*pst*1.25,pswt*4*petalwidth((j+1)*step))
+     nproduce  ]
+     
+     
+     
+I(l,r) --> SetWidth(r)F(l, r-radinc)
+
+    #nproduce ;(16) /(72)^(80)[Sweep(petalaxis, petalsection, pscale(t)*1.25, 0.01, pscalew(t)*5, petalwidth)]
+  #nproduce [;(16) /(72)&(290) MyGC (petalaxis,petalsection, petalwidth, pscale(t)*1.25, pscalew(t)*5, 100)] 
+
+
+
+endlsystem
+###### INITIALISATION ######
+
+__lpy_code_version__ = 1.1
+
+def __initialiseContext__(context):
+	import openalea.plantgl.all as pgl
+	Color_1 = pgl.Material("Color_1" , ambient = (76,106,68) , diffuse = 0.735849 , shininess = 0.13 , )
+	Color_1.name = "Color_1"
+	context.turtle.setMaterial(1,Color_1)
+	Color_6 = pgl.Material("Color_6" , ambient = (128,0,128) , diffuse = 1.23438 , specular = (2,2,2) , emission = (61,61,61) , shininess = 0.44 , )
+	Color_6.name = "Color_6"
+	context.turtle.setMaterial(6,Color_6)
+	PGL_2494086514016 = pgl.ImageTexture("PGL_2494086514016" , "./chromatexture.jpg" , )
+	PGL_2494086514016.name = "PGL_2494086514016"
+	Color_15 = pgl.Texture2D(image = PGL_2494086514016 , )
+	Color_15.name = "Color_15"
+	context.turtle.setMaterial(15,Color_15)
+	PGL_2494238983136 = pgl.ImageTexture("PGL_2494238983136" , "./lavtexture.jpg" , )
+	PGL_2494238983136.name = "PGL_2494238983136"
+	Color_16 = pgl.Texture2D(image = PGL_2494238983136 , )
+	Color_16.name = "Color_16"
+	context.turtle.setMaterial(16,Color_16)
+	PGL_1949520006128 = pgl.ImageTexture("PGL_1949520006128" , "./lavtexturesad.jpg" , )
+	PGL_1949520006128.name = "PGL_1949520006128"
+	Color_17 = pgl.Texture2D(image = PGL_1949520006128 , )
+	Color_17.name = "Color_17"
+	context.turtle.setMaterial(17,Color_17)
+	scalars = [('new category', 'Category')]
+	context["__scalars__"] = scalars
+	for s in scalars:
+		if not s[1] == "Category" : context[s[0]] = s[2]
+	import openalea.plantgl.all as pgl
+	leafwidth = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0, 1),(0.480952, 0.509524, 1),(0.666667, 0, 1),(1, 0, 1)]) , 
+	    )
+	leafwidth.name = "leafwidth"
+	import openalea.plantgl.all as pgl
+	path = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.0190476, 0.352381, 1),(0.109524, -0.0142857, 1),(0.5, 0, 1)]) , 
+	    )
+	path.name = "path"
+	section = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(-0.5, 0, 1),(-0.185714, 0.204762, 1),(-0.0119048, -0.114286, 1),(0.171429, 0.204762, 1),(0.5, 0, 1)]) , 
+	    )
+	section.name = "section"
+	import openalea.plantgl.all as pgl
+	leafpatch = pgl.NurbsPatch(	
+	    pgl.Point4Matrix([[(0.0350157, -0.0564739, 0.00852821, 1), (-0.002078, -0.0265793, 0.00248597, 1), (-0.020636, -0.0169826, 0.0161601, 1), (0.00765696, 0.0214234, 0.0149268, 1), (-0.00107968, 0.0362601, 0.0209523, 1)], [(0.0928912, -0.481079, 0.410742, 1), (-0.000589914, -0.168841, 0.331184, 1), (-0.0780759, -0.0115492, 0.379307, 1), (0.0707107, 0.166667, 0.333333, 1), (0.149728, 0.471735, 0.429672, 1)], [(0.136151, -0.475051, 0.778779, 1), (0, -0.166667, 0.666667, 1), (-0.0490841, -0.0170079, 0.65842, 1), (0.0707107, 0.166667, 0.666667, 1), (0.180942, 0.401745, 0.752074, 1)], [(0.0372865, -0.0746766, 0.965309, 1), (0.00362886, -0.0585631, 0.971955, 1), (-0.00738887, -0.01653, 0.983488, 1), (0.0267801, 0.0366139, 0.981845, 1), (-0.0200809, 0.0476732, 0.951535, 1)]]) , 
+	    )
+	leafpatch.name = "leafpatch"
+	import openalea.plantgl.scenegraph.nurbspatch_nd as pglnp
+	wtf = pglnp.NurbsPatch3D([[[Vector4(-0.252927,-0.388544,-0.239863,1), Vector4(-0.5,-0.5,-0.166667,1), Vector4(-0.5,-0.5,0.166667,1), Vector4(0.46419,0.468732,-0.453749,1)], [Vector4(-0.5,-0.166667,-0.5,1), Vector4(-0.5,-0.166667,-0.166667,1), Vector4(-0.5,-0.166667,0.166667,1), Vector4(-0.5,-0.166667,0.5,1)], [Vector4(-0.5,0.166667,-0.5,1), Vector4(-0.5,0.166667,-0.166667,1), Vector4(-0.5,0.166667,0.166667,1), Vector4(-0.5,0.166667,0.5,1)], [Vector4(-0.185994,0.122463,-0.232699,1), Vector4(-0.5,0.5,-0.166667,1), Vector4(-0.5,0.5,0.166667,1), Vector4(-0.0556724,0.137693,-0.0171637,1)]], [[Vector4(-0.166667,-0.5,-0.5,1), Vector4(-0.166667,-0.5,-0.166667,1), Vector4(-0.166667,-0.5,0.166667,1), Vector4(-0.166667,-0.5,0.5,1)], [Vector4(-0.166667,-0.166667,-0.5,1), Vector4(-0.166667,-0.166667,-0.166667,1), Vector4(0.527821,0.292136,-0.49819,1), Vector4(-0.166667,-0.166667,0.5,1)], [Vector4(-0.166667,0.166667,-0.5,1), Vector4(-0.166667,0.166667,-0.166667,1), Vector4(-0.166667,0.166667,0.166667,1), Vector4(-0.166667,0.166667,0.5,1)], [Vector4(-0.166667,0.5,-0.5,1), Vector4(-0.166667,0.5,-0.166667,1), Vector4(-0.166667,0.5,0.166667,1), Vector4(-0.166667,0.5,0.5,1)]], [[Vector4(0.166667,-0.5,-0.5,1), Vector4(0.166667,-0.5,-0.166667,1), Vector4(0.166667,-0.5,0.166667,1), Vector4(0.166667,-0.5,0.5,1)], [Vector4(0.166667,-0.166667,-0.5,1), Vector4(0.166667,-0.166667,-0.166667,1), Vector4(0.166667,-0.166667,0.166667,1), Vector4(0.166667,-0.166667,0.5,1)], [Vector4(0.166667,0.166667,-0.5,1), Vector4(0.166667,0.166667,-0.166667,1), Vector4(0.166667,0.166667,0.166667,1), Vector4(0.166667,0.166667,0.5,1)], [Vector4(0.166667,0.5,-0.5,1), Vector4(0.166667,0.5,-0.166667,1), Vector4(0.166667,0.5,0.166667,1), Vector4(0.166667,0.5,0.5,1)]], [[Vector4(0.137222,-0.422054,-0.433525,1), Vector4(0.5,-0.5,-0.166667,1), Vector4(0.5,-0.5,0.166667,1), Vector4(0.359455,-0.18267,0.502481,1)], [Vector4(0.5,-0.166667,-0.5,1), Vector4(0.5,-0.166667,-0.166667,1), Vector4(0.5,-0.166667,0.166667,1), Vector4(0.5,-0.166667,0.5,1)], [Vector4(0.5,0.166667,-0.5,1), Vector4(0.5,0.166667,-0.166667,1), Vector4(0.5,0.166667,0.166667,1), Vector4(0.5,0.166667,0.5,1)], [Vector4(0.5,0.5,-0.5,1), Vector4(0.5,0.5,-0.166667,1), Vector4(0.5,0.5,0.166667,1), Vector4(0.203583,0.102186,0.279502,1)]]], ustride=45, vstride=2, wstride=2)
+	wtf.name = 'wtf'
+	leafpatch_2 = pgl.NurbsPatch(	
+	    pgl.Point4Matrix([[(0.0350157, -0.0564739, 0.00852821, 1), (-0.002078, -0.0265793, 0.00248597, 1), (-0.020636, -0.0169826, 0.0161601, 1), (0.00765696, 0.0214234, 0.0149268, 1), (-0.00107968, 0.0362601, 0.0209523, 1)], [(0.0928912, -0.481079, 0.410742, 1), (-0.000589914, -0.168841, 0.331184, 1), (-0.0780759, -0.0115492, 0.379307, 1), (0.0707107, 0.166667, 0.333333, 1), (0.149728, 0.471735, 0.429672, 1)], [(0.136151, -0.475051, 0.778779, 1), (0, -0.166667, 0.666667, 1), (-0.0490841, -0.0170079, 0.65842, 1), (0.0707107, 0.166667, 0.666667, 1), (0.180942, 0.401745, 0.752074, 1)], [(0.0372865, -0.0746766, 0.965309, 1), (0.00362886, -0.0585631, 0.971955, 1), (-0.00738887, -0.01653, 0.983488, 1), (0.0267801, 0.0366139, 0.981845, 1), (-0.0200809, 0.0476732, 0.951535, 1)]]) , 
+	    )
+	leafpatch_2.name = "leafpatch_2"
+	parameter = pgl.NurbsPatch(	
+	    pgl.Point4Matrix([[(0, -0.5, -0.5, 1), (0, -0.5, -0.166667, 1), (0, -0.5, 0.166667, 1), (0, -0.5, 0.5, 1)], [(0, -0.166667, -0.5, 1), (0, -0.166667, -0.166667, 1), (0, -0.166667, 0.166667, 1), (0, -0.166667, 0.5, 1)], [(0, 0.166667, -0.5, 1), (0, 0.166667, -0.166667, 1), (0, 0.166667, 0.166667, 1), (0, 0.166667, 0.5, 1)], [(0, 0.5, -0.5, 1), (0, 0.5, -0.166667, 1), (0, 0.5, 0.166667, 1), (0, 0.5, 0.5, 1)]]) , 
+ustride = 10 , vstride = 10 , 	    )
+	parameter.name = "parameter"
+	parameter_2 = pgl.NurbsPatch(	
+	    pgl.Point4Matrix([[(0, -0.5, -0.5, 1), (0, -0.5, -0.166667, 1), (0, -0.5, 0.166667, 1), (0, -0.5, 0.5, 1)], [(0, -0.166667, -0.5, 1), (0, -0.166667, -0.166667, 1), (0, -0.166667, 0.166667, 1), (0, -0.166667, 0.5, 1)], [(0, 0.166667, -0.5, 1), (0, 0.166667, -0.166667, 1), (0, 0.166667, 0.166667, 1), (0, 0.166667, 0.5, 1)], [(0, 0.5, -0.5, 1), (0, 0.5, -0.166667, 1), (0, 0.5, 0.166667, 1), (0, 0.5, 0.5, 1)]]) , 
+ustride = 10 , vstride = 10 , 	    )
+	parameter_2.name = "parameter_2"
+	petalsection = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(-0.399374, -0.0732101, 1),(-0.274558, 0.0274474, 1),(-0.0431853, 0.13682, 1),(0.308245, 0.0716428, 1),(0.48733, -0.0685854, 1)]) , 
+	    )
+	petalsection.name = "petalsection"
+	petalaxis = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(-0.510626, -0.120426, 1),(-0.233927, -0.177153, 1),(-0.0424371, -0.12135, 1),(0.262783, 0.00817484, 1),(0.410099, 0.15857, 1),(0.550921, 0.285198, 1)]) , 
+	    )
+	petalaxis.name = "petalaxis"
+	petalwidth = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.0356309, 1),(0.280958, 0.0336017, 1),(0.487176, 0.129186, 1),(0.757559, 0.128437, 1),(1, 0.0106212, 1)]) , 
+	    )
+	petalwidth.name = "petalwidth"
+	budsection = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(-0.399374, 0.0732101, 1),(-0.274558, -0.0274474, 1),(-0.0431853, -0.13682, 1),(0.308245, -0.0716428, 1),(0.48733, 0.0685854, 1)]) , 
+	    )
+	budsection.name = "budsection"
+	budaxis = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(-0.510626, 0.120426, 1),(-0.233927, 0.177153, 1),(-0.0424371, 0.12135, 1),(0.262783, -0.00817484, 1),(0.410099, -0.15857, 1),(0.550921, -0.285198, 1)]) , 
+	    )
+	budaxis.name = "budaxis"
+	panel_0 = ({'name': 'Panel 1', 'active': True, 'visible': True},[('Function',leafwidth),('Curve2D',path),('Curve2D',section),('NurbsPatch',leafpatch),('NurbsPatch3D',wtf),('NurbsPatch',leafpatch_2),('NurbsPatch',parameter),('NurbsPatch',parameter_2),('Curve2D',petalsection),('Curve2D',petalaxis),('Function',petalwidth),('Curve2D',budsection),('Curve2D',budaxis)])
+	parameterset = [panel_0,]
+	context["__functions__"] = [('leafwidth',leafwidth),('petalwidth',petalwidth),]
+	context["__curves__"] = [('path',path),('section',section),('petalsection',petalsection),('petalaxis',petalaxis),('budsection',budsection),('budaxis',budaxis),]
+	context["__parameterset__"] = parameterset
+	context["leafwidth"] = pgl.QuantisedFunction(leafwidth)
+	context["path"] = path
+	context["section"] = section
+	context["leafpatch"] = leafpatch
+	context["wtf"] = wtf
+	context["leafpatch_2"] = leafpatch_2
+	context["parameter"] = parameter
+	context["parameter_2"] = parameter_2
+	context["petalsection"] = petalsection
+	context["petalaxis"] = petalaxis
+	context["petalwidth"] = pgl.QuantisedFunction(petalwidth)
+	context["budsection"] = budsection
+	context["budaxis"] = budaxis
